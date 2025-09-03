@@ -18,6 +18,7 @@ import os
 from telegram import Update as TgUpdate
 
 
+
 # --- Flask app at module level for Gunicorn ---
 app = Flask(__name__)
 application = None
@@ -41,7 +42,6 @@ def telegram_webhook():
     else:
         return jsonify({'status': 'bot not initialized'}), 500
 
-# --- Telegram bot setup ---
 def setup_logging():
     """Setup logging configuration"""
     if BotConfig.ENABLE_LOGGING:
@@ -52,7 +52,6 @@ def setup_logging():
         logger = logging.getLogger(__name__)
         logger.info("Logging configured successfully")
 
-
 def main():
     """Main function to run the bot"""
     setup_logging()
@@ -62,7 +61,6 @@ def main():
     global application
     logger.info("Initializing Telegram Bot...")
     application = Application.builder().token(BotConfig.BOT_TOKEN).build()
-    # No need to run async initialization here
 
     # Add message handlers
     logger.info("Adding message handlers...")
@@ -107,8 +105,9 @@ def main():
     # application.add_handler(TgMessageHandler(filters.PHOTO, CustomMessageHandler.handle_photo))
     # application.add_handler(TgMessageHandler(filters.DOCUMENT, CustomMessageHandler.handle_document))
 
-    # Set webhook for Telegram
 
+
+    # Set webhook for Telegram
     webhook_url = os.environ.get('WEBHOOK_URL')
     if webhook_url:
         application.bot.set_webhook(webhook_url)
@@ -118,9 +117,18 @@ def main():
 
     logger.info("Bot initialized and ready for webhook updates.")
 
+import threading
+
+def run_bot():
+    if application:
+        application.run_polling()
+
 if __name__ == '__main__':
     try:
         main()
+        # Start the bot in a background thread
+        bot_thread = threading.Thread(target=run_bot, daemon=True)
+        bot_thread.start()
     except KeyboardInterrupt:
         print("\n🛑 Bot stopped by user")
     except Exception as e:
