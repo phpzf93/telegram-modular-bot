@@ -3,61 +3,96 @@ from telegram.ext import ContextTypes
 from utils.decorators import log_message, admin_required
 from database import UserDatabase
 import logging
+from utils.xendit_api import create_invoice, create_withdrawal
 
 logger = logging.getLogger(__name__)
 db = UserDatabase()
 
 class WalletHandler:
     """Handle wallet-related commands and functions"""
-    
+
     @staticmethod
     @log_message
     async def handle_wallet_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Show user's wallet balance"""
         user = update.effective_user
         db.add_user(user.id, user.username, user.first_name)
-        
         balance = db.get_wallet_balance(user.id)
-        
-        message = f"💰 **Your Wallet**\n\n"
-        message += f"👤 User: {user.first_name}\n"
-        message += f"💵 Balance: **${balance:.2f}**\n\n"
-        message += "📋 **Wallet Commands:**\n"
+        message = f"\U0001F4B0 **Your Wallet**\n\n"
+        message += f"\U0001F464 User: {user.first_name}\n"
+        message += f"\U0001F4B5 Balance: **${balance:.2f}**\n\n"
+        message += "\U0001F4CB **Wallet Commands:**\n"
         message += "• `/wallet` - Check balance\n"
         message += "• `/wallet_history` - Transaction history\n"
-        message += "• `/wallet_deposit <amount>` - Request deposit (demo)\n"
-        message += "• `/wallet_withdraw <amount>` - Request withdrawal (demo)"
-        
+        message += "• `/wallet_deposit <amount>` - Request deposit\n"
+        message += "• `/wallet_withdraw <amount>` - Request withdrawal"
         await update.message.reply_text(message, parse_mode='Markdown')
-    
+
     @staticmethod
     @log_message
     async def handle_wallet_history(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Show user's wallet transaction history"""
         user = update.effective_user
         db.add_user(user.id, user.username, user.first_name)
-        
         transactions = db.get_wallet_transactions(user.id, limit=10)
-        
         if not transactions:
-            await update.message.reply_text("📝 No wallet transactions found.")
+            await update.message.reply_text("\U0001F4DD No wallet transactions found.")
             return
-        
-        message = f"📊 **Wallet History** (Last 10 transactions)\n\n"
-        
+        message = f"\U0001F4CA **Wallet History** (Last 10 transactions)\n\n"
         for i, tx in enumerate(reversed(transactions), 1):
             amount_str = f"+${tx['amount']:.2f}" if tx['amount'] > 0 else f"-${abs(tx['amount']):.2f}"
             message += f"{i}. {amount_str} - {tx['type']}\n"
-            message += f"   💰 Balance: ${tx['new_balance']:.2f}\n"
+            message += f"   \U0001F4B0 Balance: ${tx['new_balance']:.2f}\n"
             if tx['description']:
-                message += f"   📝 {tx['description']}\n"
-            message += f"   📅 {tx['timestamp'][:19].replace('T', ' ')}\n\n"
-        
+                message += f"   \U0001F4DD {tx['description']}\n"
+            message += f"   \U0001F4C5 {tx['timestamp'][:19].replace('T', ' ')}\n\n"
         await update.message.reply_text(message, parse_mode='Markdown')
-    
+
     @staticmethod
     @log_message
     async def handle_wallet_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Initiate deposit using Xendit invoice"""
+        user = update.effective_user
+        db.add_user(user.id, user.username, user.first_name)
+        args = context.args
+        if not args or not args[0].replace('.', '', 1).isdigit():
+            await update.message.reply_text("Usage: /wallet_deposit <amount>")
+            return
+        amount = float(args[0])
+        await update.message.reply_text("Creating payment invoice...")
+        invoice = await create_invoice(amount, user.id)
+        if invoice.get("error"):
+            await update.message.reply_text(f"Error creating invoice: {invoice['error']}")
+            return
+        pay_url = invoice.get("invoice_url")
+        if pay_url:
+            await update.message.reply_text(f"Please pay using this link: {pay_url}")
+        else:
+            await update.message.reply_text("Failed to get payment link.")
+
+    @staticmethod
+    @log_message
+    async def handle_wallet_withdraw(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Initiate withdrawal using Xendit disbursement"""
+        user = update.effective_user
+        db.add_user(user.id, user.username, user.first_name)
+        args = context.args
+        if len(args) < 4:
+            await update.message.reply_text(
+                "Usage: /wallet_withdraw <amount> <bank_code> <account_number> <account_holder_name>\n"
+                "Example: /wallet_withdraw 100 BCA 1234567890 John Doe"
+            )
+            return
+        amount = float(args[0])
+        bank_code = args[1]
+        account_number = args[2]
+        account_holder_name = " ".join(args[3:])
+        await update.message.reply_text("Processing withdrawal...")
+        result = await create_withdrawal(amount, user.id, bank_code, account_number, account_holder_name)
+        if result.get("error"):
+            await update.message.reply_text(f"Error: {result['error']}")
+        else:
+            await update.message.reply_text(f"Withdrawal request submitted! Status: {result.get('status', 'unknown')}")
         """Handle wallet deposit request (demo)"""
         user = update.effective_user
         db.add_user(user.id, user.username, user.first_name)

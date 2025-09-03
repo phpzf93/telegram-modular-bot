@@ -15,10 +15,10 @@ from handlers.broadcast_handler import BroadcastHandler
 from flask import Flask, request, jsonify
 import os
 
+from telegram import Update as TgUpdate
+
 # --- Flask app at module level for Gunicorn ---
 app = Flask(__name__)
-
-# Telegram bot Application will be initialized globally
 application = None
 
 @app.route('/', methods=['GET'])
@@ -32,9 +32,10 @@ def health():
 @app.route('/telegram/webhook', methods=['POST'])
 def telegram_webhook():
     global application
-    update = request.get_json(force=True)
+    update_json = request.get_json(force=True)
     if application:
-        application.update_queue.put(update)
+        update = TgUpdate.de_json(update_json, application.bot)
+        application.process_update(update)
         return jsonify({'status': 'received'}), 200
     else:
         return jsonify({'status': 'bot not initialized'}), 500
@@ -49,6 +50,7 @@ def setup_logging():
         )
         logger = logging.getLogger(__name__)
         logger.info("Logging configured successfully")
+
 
 def main():
     """Main function to run the bot"""
@@ -103,17 +105,6 @@ def main():
     # application.add_handler(TgMessageHandler(filters.PHOTO, CustomMessageHandler.handle_photo))
     # application.add_handler(TgMessageHandler(filters.DOCUMENT, CustomMessageHandler.handle_document))
 
-    # Start the bot
-    logger.info("Starting bot...")
-    logger.info(f"Bot configured with {len(BotConfig.ADMIN_USER_IDS)} admin(s)")
-
-    print("🤖 Telegram Bot is starting...")
-    print(f"📊 Admin users configured: {len(BotConfig.ADMIN_USER_IDS)}")
-    print("🔧 To add yourself as admin, add your user ID to bot_config.py")
-    print("📱 Send /start to the bot to begin!")
-    print("💰 New features: Wallet system and broadcasting!")
-    print("⏹️  Press Ctrl+C to stop the bot")
-
     # Set webhook for Telegram
     webhook_url = os.environ.get('WEBHOOK_URL')
     if webhook_url:
@@ -121,7 +112,8 @@ def main():
         logger.info(f"Webhook set to {webhook_url}")
     else:
         logger.warning("WEBHOOK_URL not set. Bot will not receive updates via webhook.")
-    # Do NOT run app.run() here; Gunicorn will serve the Flask app
+
+    logger.info("Bot initialized and ready for webhook updates.")
 
 try:
     main()
