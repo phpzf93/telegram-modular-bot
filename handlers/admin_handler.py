@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from utils.decorators import admin_required, log_message
+from utils.decorators import admin_required
 from bot_config import BotConfig
 from database import UserDatabase
 import logging
