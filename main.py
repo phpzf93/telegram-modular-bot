@@ -64,6 +64,8 @@ def main():
     global application
     logger.info("Initializing Telegram Bot...")
     application = Application.builder().token(BotConfig.BOT_TOKEN).build()
+    import asyncio
+    asyncio.run(application.initialize())
 
     # Add message handlers
     logger.info("Adding message handlers...")
