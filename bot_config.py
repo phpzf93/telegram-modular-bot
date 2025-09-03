@@ -39,3 +39,7 @@ class BotConfig:
             cls.ADMIN_USER_IDS.remove(user_id)
             return True
         return False
+
+if __name__ == "__main__":
+    import os
+    os.system("gunicorn python_template.main:app")

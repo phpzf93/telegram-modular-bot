@@ -1,1 +1,1 @@
-web: gunicorn main:app
+web: gunicorn python_template.main:app
