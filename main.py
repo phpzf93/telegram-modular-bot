@@ -17,6 +17,7 @@ import os
 
 from telegram import Update as TgUpdate
 
+
 # --- Flask app at module level for Gunicorn ---
 app = Flask(__name__)
 application = None
@@ -29,16 +30,13 @@ def root_health():
 def health():
     return jsonify({'status': 'ok'}), 200
 
-
-import asyncio
-
 @app.route('/telegram/webhook', methods=['POST'])
 def telegram_webhook():
     global application
     update_json = request.get_json(force=True)
     if application:
         update = TgUpdate.de_json(update_json, application.bot)
-        asyncio.run(application.process_update(update))
+        application.update_queue.put(update)
         return jsonify({'status': 'received'}), 200
     else:
         return jsonify({'status': 'bot not initialized'}), 500
@@ -64,8 +62,7 @@ def main():
     global application
     logger.info("Initializing Telegram Bot...")
     application = Application.builder().token(BotConfig.BOT_TOKEN).build()
-    import asyncio
-    asyncio.run(application.initialize())
+    # No need to run async initialization here
 
     # Add message handlers
     logger.info("Adding message handlers...")
@@ -114,20 +111,21 @@ def main():
 
     webhook_url = os.environ.get('WEBHOOK_URL')
     if webhook_url:
-        asyncio.run(application.bot.set_webhook(webhook_url))
+        application.bot.set_webhook(webhook_url)
         logger.info(f"Webhook set to {webhook_url}")
     else:
         logger.warning("WEBHOOK_URL not set. Bot will not receive updates via webhook.")
 
     logger.info("Bot initialized and ready for webhook updates.")
 
-try:
-    main()
-except KeyboardInterrupt:
-    print("\n🛑 Bot stopped by user")
-except Exception as e:
-    print(f"❌ Error starting bot: {e}")
-    logging.error(f"Bot startup error: {e}")
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n🛑 Bot stopped by user")
+    except Exception as e:
+        print(f"❌ Error starting bot: {e}")
+        logging.error(f"Bot startup error: {e}")
 #!/usr/bin/env python3
 """
 Modular Telegram Bot
