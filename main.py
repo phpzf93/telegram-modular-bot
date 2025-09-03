@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-Modular Telegram Bot
-A feature-rich Telegram bot with message handling, wallet functionality, and admin functions.
-"""
-
 import logging
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from bot_config import BotConfig
