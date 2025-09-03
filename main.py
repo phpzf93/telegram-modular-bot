@@ -123,14 +123,13 @@ def main():
         logger.warning("WEBHOOK_URL not set. Bot will not receive updates via webhook.")
     # Do NOT run app.run() here; Gunicorn will serve the Flask app
 
-if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\n🛑 Bot stopped by user")
-    except Exception as e:
-        print(f"❌ Error starting bot: {e}")
-        logging.error(f"Bot startup error: {e}")
+try:
+    main()
+except KeyboardInterrupt:
+    print("\n🛑 Bot stopped by user")
+except Exception as e:
+    print(f"❌ Error starting bot: {e}")
+    logging.error(f"Bot startup error: {e}")
 #!/usr/bin/env python3
 """
 Modular Telegram Bot
