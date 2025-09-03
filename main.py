@@ -91,13 +91,18 @@ def main():
     from flask import Flask, request, jsonify
     import os
 
-    flask_app = Flask(__name__)
+    app = Flask(__name__)
 
-    @flask_app.route('/health', methods=['GET'])
+
+    @app.route('/', methods=['GET'])
+    def root_health():
+        return 'OK', 200
+
+    @app.route('/health', methods=['GET'])
     def health():
         return jsonify({'status': 'ok'}), 200
 
-    @flask_app.route('/telegram/webhook', methods=['POST'])
+    @app.route('/telegram/webhook', methods=['POST'])
     def telegram_webhook():
         update = request.get_json(force=True)
         application.update_queue.put(update)
@@ -112,7 +117,7 @@ def main():
         logger.warning("WEBHOOK_URL not set. Bot will not receive updates via webhook.")
 
     # Run Flask app
-    flask_app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 
 if __name__ == '__main__':
     try:
