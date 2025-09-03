@@ -1,8 +1,12 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# C extensions
 *.so
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -15,40 +19,23 @@ lib64/
 parts/
 sdist/
 var/
-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
 
-# Virtual Environment
+# Virtual environments
+.venv/
 venv/
-env/
 ENV/
+env/
 env.bak/
 venv.bak/
 
-# IDE
+# VS Code
 .vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyCharm
 .idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Bot specific
-users.json
-*.log
-config.env
-
-# Temporary files
-*.tmp
-*.temp
