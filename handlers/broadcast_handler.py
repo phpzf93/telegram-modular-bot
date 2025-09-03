@@ -101,16 +101,6 @@ class BroadcastHandler:
         del context.user_data['pending_broadcast']
 
         logger.info(f"Broadcast completed by admin {update.effective_user.id}: {success_count} success, {failed_count} failed")
-
-
-            final_message += f"📊 Total users: {len(user_ids)}"
-
-            await status_msg.edit_text(final_message, parse_mode='Markdown')
-
-            # Clear pending broadcast
-            del context.user_data['pending_broadcast']
-
-            logger.info(f"Broadcast completed by admin {update.effective_user.id}: {success_count} success, {failed_count} failed")
     
     @staticmethod
     @admin_required
