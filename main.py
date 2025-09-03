@@ -87,6 +87,33 @@ def main():
     print("💰 New features: Wallet system and broadcasting!")
     print("⏹️  Press Ctrl+C to stop the bot")
     
+
+    from flask import Flask, request, jsonify
+    import os
+
+    # Flask app at module level for Gunicorn
+    app = Flask(__name__)
+
+    # Telegram bot Application will be initialized in main()
+    application = None
+
+    @app.route('/', methods=['GET'])
+    def root_health():
+        return 'OK', 200
+
+    @app.route('/health', methods=['GET'])
+    def health():
+        return jsonify({'status': 'ok'}), 200
+
+    @app.route('/telegram/webhook', methods=['POST'])
+    def telegram_webhook():
+        global application
+        update = request.get_json(force=True)
+        if application:
+            application.update_queue.put(update)
+            return jsonify({'status': 'received'}), 200
+        else:
+            return jsonify({'status': 'bot not initialized'}), 500
     # Set up Flask app for webhook and health check
     from flask import Flask, request, jsonify
     import os
