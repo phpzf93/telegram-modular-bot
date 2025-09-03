@@ -29,13 +29,16 @@ def root_health():
 def health():
     return jsonify({'status': 'ok'}), 200
 
+
+import asyncio
+
 @app.route('/telegram/webhook', methods=['POST'])
 def telegram_webhook():
     global application
     update_json = request.get_json(force=True)
     if application:
         update = TgUpdate.de_json(update_json, application.bot)
-        application.process_update(update)
+        asyncio.run(application.process_update(update))
         return jsonify({'status': 'received'}), 200
     else:
         return jsonify({'status': 'bot not initialized'}), 500
@@ -106,9 +109,10 @@ def main():
     # application.add_handler(TgMessageHandler(filters.DOCUMENT, CustomMessageHandler.handle_document))
 
     # Set webhook for Telegram
+
     webhook_url = os.environ.get('WEBHOOK_URL')
     if webhook_url:
-        application.bot.set_webhook(webhook_url)
+        asyncio.run(application.bot.set_webhook(webhook_url))
         logger.info(f"Webhook set to {webhook_url}")
     else:
         logger.warning("WEBHOOK_URL not set. Bot will not receive updates via webhook.")
