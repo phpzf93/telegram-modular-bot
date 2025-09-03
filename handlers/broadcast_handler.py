@@ -9,6 +9,16 @@ logger = logging.getLogger(__name__)
 db = UserDatabase()
 
 class BroadcastHandler:
+    @staticmethod
+    @admin_required
+    async def handle_broadcast_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Cancel a pending broadcast"""
+        if 'pending_broadcast' in context.user_data:
+            del context.user_data['pending_broadcast']
+            await update.message.reply_text("❌ Broadcast cancelled.")
+            logger.info(f"Broadcast cancelled by admin {update.effective_user.id}")
+        else:
+            await update.message.reply_text("No pending broadcast to cancel.")
     """Handle broadcast functionality"""
     
     @staticmethod
