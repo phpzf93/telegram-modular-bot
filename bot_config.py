@@ -4,14 +4,16 @@ from typing import List
 class BotConfig:
     """Configuration class for the Telegram bot"""
     
-    # Bot token - replace with your actual token
-    BOT_TOKEN = "8275071760:AAFOYIYzHHPHMnONXNA0tPFA-Ys3c3VhjCs"
+    # Bot token - loaded from environment variable
+    BOT_TOKEN = os.environ.get("BOT_TOKEN")
+
+    # Xendit API key - loaded from environment variable
+    XENDIT_API_KEY = os.environ.get("XENDIT_API_KEY")
     
     # Admin user IDs - replace with actual admin user IDs
-    ADMIN_USER_IDS: List[int] = [
-        # Add your admin user IDs here
-        # Example: 123456789, 987654321
-    ]
+    ADMIN_USER_IDS: List[int] = [8209675920]
+    # Add your admin user IDs here
+    # Example: 123456789, 987654321
     
     # Bot settings
     ENABLE_LOGGING = True

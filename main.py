@@ -69,9 +69,12 @@ def main():
     
     # Add content handlers
     logger.info("Adding content handlers...")
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, MessageHandler.handle_text_message))
-    application.add_handler(MessageHandler(filters.PHOTO, MessageHandler.handle_photo))
-    application.add_handler(MessageHandler(filters.DOCUMENT, MessageHandler.handle_document))
+    from telegram.ext import MessageHandler as TgMessageHandler, filters
+    from handlers.message_handler import MessageHandler as CustomMessageHandler
+    application.add_handler(TgMessageHandler(filters.TEXT & ~filters.COMMAND, CustomMessageHandler.handle_text_message))
+    # If you have handle_photo and handle_document methods, add them similarly:
+    # application.add_handler(TgMessageHandler(filters.PHOTO, CustomMessageHandler.handle_photo))
+    # application.add_handler(TgMessageHandler(filters.DOCUMENT, CustomMessageHandler.handle_document))
     
     # Start the bot
     logger.info("Starting bot...")
@@ -84,8 +87,32 @@ def main():
     print("💰 New features: Wallet system and broadcasting!")
     print("⏹️  Press Ctrl+C to stop the bot")
     
-    # Run the bot
-    application.run_polling(allowed_updates=['message'])
+    # Set up Flask app for webhook and health check
+    from flask import Flask, request, jsonify
+    import os
+
+    flask_app = Flask(__name__)
+
+    @flask_app.route('/health', methods=['GET'])
+    def health():
+        return jsonify({'status': 'ok'}), 200
+
+    @flask_app.route('/telegram/webhook', methods=['POST'])
+    def telegram_webhook():
+        update = request.get_json(force=True)
+        application.update_queue.put(update)
+        return jsonify({'status': 'received'}), 200
+
+    # Set webhook for Telegram
+    webhook_url = os.environ.get('WEBHOOK_URL')
+    if webhook_url:
+        application.bot.set_webhook(webhook_url)
+        logger.info(f"Webhook set to {webhook_url}")
+    else:
+        logger.warning("WEBHOOK_URL not set. Bot will not receive updates via webhook.")
+
+    # Run Flask app
+    flask_app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 
 if __name__ == '__main__':
     try:

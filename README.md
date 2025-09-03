@@ -48,11 +48,6 @@ A comprehensive, modular Telegram bot built with Python that includes message ha
 - `/admin_shutdown` - Shutdown command (placeholder)
 
 ## 📁 Project Structure
-
-```
-telegram-bot/
-├── main.py                    # Entry point and bot initialization
-├── bot_config.py             # Configuration and settings
 ├── database.py               # User database management
 ├── requirements.txt          # Python dependencies
 ├── users.json               # User database (auto-created)
@@ -88,11 +83,6 @@ ADMIN_USER_IDS: List[int] = [
 **How to find your Telegram User ID:**
 1. Start a chat with @userinfobot on Telegram
 2. Send any message to get your user ID
-3. Add this ID to the `ADMIN_USER_IDS` list
-
-### 3. Run the Bot
-```bash
-python main.py
 ```
 
 ## 💰 Wallet System

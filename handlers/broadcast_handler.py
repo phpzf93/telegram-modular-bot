@@ -47,20 +47,26 @@ class BroadcastHandler:
         if 'pending_broadcast' not in context.user_data:
             await update.message.reply_text("❌ No pending broadcast found. Use /broadcast <message> first.")
             return
-        
+
         broadcast_data = context.user_data['pending_broadcast']
         message = broadcast_data['message']
-        user_ids = broadcast_data['user_ids']
-        
+        from bot_config import BotConfig
+        user_ids = set(broadcast_data['user_ids'])
+        # Add admin IDs to broadcast recipients
+        user_ids.update(BotConfig.ADMIN_USER_IDS)
+        user_ids = list(user_ids)
+
         # Start broadcasting
         status_msg = await update.message.reply_text("📡 Starting broadcast...")
-        
+
         success_count = 0
         failed_count = 0
-        
+        success_users = []
+        failed_users = []
+
         # Add broadcast header
         broadcast_message = f"📢 **Broadcast Message**\n\n{message}\n\n_This is an official broadcast from the bot administrators._"
-        
+
         for user_id in user_ids:
             try:
                 await context.bot.send_message(
@@ -69,37 +75,42 @@ class BroadcastHandler:
                     parse_mode='Markdown'
                 )
                 success_count += 1
-                
+                success_users.append(user_id)
                 # Small delay to avoid rate limiting
                 await asyncio.sleep(0.1)
-                
             except Exception as e:
                 failed_count += 1
+                failed_users.append((user_id, str(e)))
                 logger.warning(f"Failed to send broadcast to user {user_id}: {e}")
-        
+
         # Update status
         final_message = f"✅ **Broadcast Completed!**\n\n"
         final_message += f"📤 Successfully sent: {success_count}\n"
+        if success_users:
+            final_message += f"Success user IDs: {', '.join(str(uid) for uid in success_users)}\n"
         final_message += f"❌ Failed to send: {failed_count}\n"
+        if failed_users:
+            final_message += "Failed user IDs and errors:\n"
+            for uid, err in failed_users:
+                final_message += f"- {uid}: {err}\n"
         final_message += f"📊 Total users: {len(user_ids)}"
-        
+
         await status_msg.edit_text(final_message, parse_mode='Markdown')
-        
+
         # Clear pending broadcast
         del context.user_data['pending_broadcast']
-        
+
         logger.info(f"Broadcast completed by admin {update.effective_user.id}: {success_count} success, {failed_count} failed")
-    
-    @staticmethod
-    @admin_required
-    async def handle_broadcast_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Cancel pending broadcast"""
-        if 'pending_broadcast' not in context.user_data:
-            await update.message.reply_text("❌ No pending broadcast found.")
-            return
-        
-        del context.user_data['pending_broadcast']
-        await update.message.reply_text("✅ Broadcast cancelled.")
+
+
+            final_message += f"📊 Total users: {len(user_ids)}"
+
+            await status_msg.edit_text(final_message, parse_mode='Markdown')
+
+            # Clear pending broadcast
+            del context.user_data['pending_broadcast']
+
+            logger.info(f"Broadcast completed by admin {update.effective_user.id}: {success_count} success, {failed_count} failed")
     
     @staticmethod
     @admin_required
